@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .upload-section.hidden {
+            display: none;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .file-input-label {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-block;
+            transition: background 0.3s;
+            font-size: 16px;
+        }
+
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .format-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .format-info h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        .format-info code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .flashcard-section {
+            display: none;
+        }
+
+        .flashcard-section.active {
+            display: block;
+        }
+
+        .card-container {
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            min-height: 300px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            border-radius: 15px;
+            min-height: 300px;
+        }
+
+        .card-front {
+            background: white;
+        }
+
+        .card-back {
+            background: #f8f9fa;
+            transform: rotateY(180deg);
+        }
+
+        .card-content {
+            font-size: 1.3em;
+            text-align: center;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .card-label {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: #764ba2;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #653a8e;
+        }
+
+        .hint {
+            color: white;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Flashcard App</h1>
+            <p>Upload a markdown file to start learning</p>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="file-input-wrapper">
+                <label for="fileInput" class="file-input-label">
+                    Choose Markdown File
+                </label>
+                <input type="file" id="fileInput" accept=".md,.txt">
+            </div>
+            <div class="file-name" id="fileName">No file chosen</div>
+
+            <div class="format-info">
+                <h3>Supported Markdown Formats:</h3>
+                <p><strong>Format 1 - Headers:</strong></p>
+                <pre><code># Question 1
+Answer 1
+
+# Question 2
+Answer 2</code></pre>
+                <p style="margin-top: 15px;"><strong>Format 2 - Q&A:</strong></p>
+                <pre><code>Q: What is the capital of France?
+A: Paris
+
+Q: What is 2 + 2?
+A: 4</code></pre>
+            </div>
+        </div>
+
+        <div class="flashcard-section" id="flashcardSection">
+            <div class="controls">
+                <button class="btn" id="prevBtn" onclick="previousCard()">← Previous</button>
+                <div class="progress" id="progress">1 / 1</div>
+                <button class="btn" id="nextBtn" onclick="nextCard()">Next →</button>
+            </div>
+
+            <div class="card-container">
+                <div class="card" id="card" onclick="flipCard()">
+                    <div class="card-face card-front">
+                        <div class="card-label">Question</div>
+                        <div class="card-content" id="question">Click to reveal answer</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-label">Answer</div>
+                        <div class="card-content" id="answer">Answer will appear here</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hint">💡 Click card to flip | Use arrow keys to navigate</div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="shuffleCards()">🔀 Shuffle</button>
+                <button class="btn btn-secondary" onclick="resetCards()">🔄 Upload New File</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let flashcards = [];
+        let currentIndex = 0;
+
+        // File input handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const content = event.target.result;
+                    parseMarkdown(content);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Parse markdown content into flashcards
+        function parseMarkdown(content) {
+            flashcards = [];
+
+            // Try Format 1: Headers (# Question / Answer)
+            const headerPattern = /^#\s+(.+?)$([\s\S]*?)(?=^#\s+|\z)/gm;
+            let match;
+            let matches = [];
+
+            while ((match = headerPattern.exec(content)) !== null) {
+                matches.push(match);
+            }
+
+            if (matches.length > 0) {
+                matches.forEach(match => {
+                    const question = match[1].trim();
+                    const answer = match[2].trim();
+                    if (question && answer) {
+                        flashcards.push({ question, answer });
+                    }
+                });
+            } else {
+                // Try Format 2: Q: / A: pattern
+                const qaPattern = /Q:\s*(.+?)\s*A:\s*(.+?)(?=\s*Q:|$)/gs;
+                while ((match = qaPattern.exec(content)) !== null) {
+                    const question = match[1].trim();
+                    const answer = match[2].trim();
+                    if (question && answer) {
+                        flashcards.push({ question, answer });
+                    }
+                }
+            }
+
+            if (flashcards.length > 0) {
+                // Store in localStorage
+                localStorage.setItem('flashcards', JSON.stringify(flashcards));
+                startFlashcards();
+            } else {
+                alert('No flashcards found in the file. Please check the format.');
+            }
+        }
+
+        // Start flashcard session
+        function startFlashcards() {
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('flashcardSection').classList.add('active');
+            currentIndex = 0;
+            displayCard();
+        }
+
+        // Display current card
+        function displayCard() {
+            if (flashcards.length === 0) return;
+
+            const card = flashcards[currentIndex];
+            document.getElementById('question').textContent = card.question;
+            document.getElementById('answer').textContent = card.answer;
+            document.getElementById('progress').textContent = `${currentIndex + 1} / ${flashcards.length}`;
+
+            // Reset flip state
+            document.getElementById('card').classList.remove('flipped');
+
+            // Update button states
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === flashcards.length - 1;
+        }
+
+        // Flip card
+        function flipCard() {
+            document.getElementById('card').classList.toggle('flipped');
+        }
+
+        // Navigation
+        function nextCard() {
+            if (currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                displayCard();
+            }
+        }
+
+        function previousCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                displayCard();
+            }
+        }
+
+        // Shuffle cards
+        function shuffleCards() {
+            for (let i = flashcards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [flashcards[i], flashcards[j]] = [flashcards[j], flashcards[i]];
+            }
+            currentIndex = 0;
+            displayCard();
+        }
+
+        // Reset and upload new file
+        function resetCards() {
+            document.getElementById('uploadSection').classList.remove('hidden');
+            document.getElementById('flashcardSection').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileName').textContent = 'No file chosen';
+            flashcards = [];
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('flashcardSection').classList.contains('active')) {
+                if (e.key === 'ArrowRight' || e.key === 'n') {
+                    nextCard();
+                } else if (e.key === 'ArrowLeft' || e.key === 'p') {
+                    previousCard();
+                } else if (e.key === ' ' || e.key === 'f') {
+                    e.preventDefault();
+                    flipCard();
+                }
+            }
+        });
+
+        // Load saved flashcards on page load
+        window.addEventListener('load', function() {
+            const saved = localStorage.getItem('flashcards');
+            if (saved) {
+                flashcards = JSON.parse(saved);
+                if (flashcards.length > 0) {
+                    const resume = confirm(`Resume previous session with ${flashcards.length} cards?`);
+                    if (resume) {
+                        startFlashcards();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
